@@ -6,12 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
-    "lint": "next lint"
+    "lint": "next lint",
+    "snipe": "node scripts/run-snipes.mjs",
+    "search": "node scripts/search.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "js-yaml": "^4.1.1",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

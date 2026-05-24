@@ -1,101 +1,114 @@
 # Reservation Bot
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/GoldmanDrew/reservation-bot)
+**Free** GitHub Pages UI + GitHub Actions sniper for Resy reservations.
 
-**GitHub:** [github.com/GoldmanDrew/reservation-bot](https://github.com/GoldmanDrew/reservation-bot)
+Inspired by [0xLoris's reservation bots](https://x.com/0xLoris/status/1749493887113028036).
 
-A web app to snipe restaurant reservations on **Resy** and **OpenTable** — inspired by [0xLoris's reservation bots](https://x.com/0xLoris/status/1749493887113028036).
+| | |
+|---|---|
+| **UI (GitHub Pages)** | [goldmandrew.github.io/reservation-bot](https://goldmandrew.github.io/reservation-bot/) |
+| **Repo** | [github.com/GoldmanDrew/reservation-bot](https://github.com/GoldmanDrew/reservation-bot) |
+| **Actions** | [View workflow runs](https://github.com/GoldmanDrew/reservation-bot/actions) |
 
-Enter a restaurant, set your preferred times, and the bot polls at drop time (or continuously) to grab a slot the instant it appears.
+---
 
-## Features
+## Quick setup (5 minutes, $0)
 
-- **Unified search** — find restaurants on Resy and OpenTable from one search box
-- **Drop snipe** — wake 30s before release time, poll every 200ms, book instantly
-- **Poll snipe** — watch for cancellations on an interval
-- **Resy auto-booking** — full headless booking via Resy API
-- **OpenTable handoff** — detects slots and opens a pre-filled booking URL
-- **Dry run mode** — test timing without actually booking
-- **Live job logs** — monitor snipes in real time
-- **Cloud-ready** — Docker + Render deploy with persistent storage
+### 1. Add GitHub Secrets
 
-## Local development
+Go to **Settings → Secrets and variables → Actions** and add:
+
+| Secret | Required | Description |
+|---|---|---|
+| `RESY_EMAIL` | Yes | Your Resy login email |
+| `RESY_PASSWORD` | Yes | Your Resy login password |
+| `WEBHOOK_URL` | No | Discord/Telegram webhook for success notifications |
+
+### 2. Enable GitHub Pages
+
+Go to **Settings → Pages → Build and deployment**:
+- Source: **GitHub Actions**
+
+(Pages deploys automatically when you push to `main`.)
+
+### 3. Create a snipe
+
+1. Open the [GitHub Pages UI](https://goldmandrew.github.io/reservation-bot/)
+2. Fill in restaurant details and click **Generate YAML**
+3. Paste the YAML into [`config/snipes.yaml`](https://github.com/GoldmanDrew/reservation-bot/edit/main/config/snipes.yaml)
+4. Push to `main`
+
+### 4. Find venue ID (one-time)
+
+Clone locally to search Resy:
+
+```bash
+git clone https://github.com/GoldmanDrew/reservation-bot.git
+cd reservation-bot
+npm install
+npm run search -- "Carbone"
+```
+
+Copy the `venue_id` into your snipe config.
+
+---
+
+## How the sniper works
+
+GitHub Actions runs **every 5 minutes** (free tier minimum):
+
+| Mode | Behavior |
+|---|---|
+| **Drop snipe** | If `drop_at` is within 6 minutes, the job sleeps until 30s before drop, then polls every **200ms** for 3 minutes |
+| **Poll snipe** | Checks availability once per workflow run (every 5 min) |
+
+### Example `config/snipes.yaml`
+
+```yaml
+snipes:
+  - id: carbone-june-15
+    enabled: true
+    platform: resy
+    venue_id: "6194"
+    restaurant_name: Carbone
+    target_date: "2026-06-15"
+    party_size: 2
+    preferred_times: ["19:00", "19:30", "20:00"]
+    mode: drop
+    drop_at: "2026-05-16T13:00:00.000Z"
+    dry_run: true
+```
+
+Set `dry_run: false` when ready to book for real. Set `enabled: false` after a successful booking.
+
+### Manual run
+
+Go to **Actions → Reservation Sniper → Run workflow** to trigger immediately.
+
+---
+
+## Run locally (optional)
+
+The repo also includes a full Next.js app for local sniping with a live UI:
 
 ```bash
 npm install
-cp .env.example .env
-npm run dev
+npm run dev          # Web UI at localhost:3000
+npm run snipe        # Run sniper from config/snipes.yaml
+npm run search -- "Carbone"
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+---
 
-## Deploy to the cloud (Render)
+## Limitations
 
-> **Note:** GitHub Pages only hosts static sites and cannot run this app (it needs a server, SQLite, and a background sniper). Use **Render** for a always-on cloud URL.
+- **5-minute cron minimum** — drop snipes compensate by polling aggressively once the workflow starts near `drop_at`
+- **Resy only** in Actions mode (OpenTable needs browser cookies)
+- **GitHub Actions free tier**: 2,000 min/month for private repos, unlimited for public
+- No payment info required anywhere
 
-### One-click deploy
-
-1. Push this repo to GitHub (see below)
-2. Go to [Render Dashboard](https://dashboard.render.com/) → **New** → **Blueprint**
-3. Connect your GitHub repo — Render reads `render.yaml` automatically
-4. Set secret env vars when prompted:
-   - `APP_PASSWORD` — password to protect your public URL (**required**)
-   - `RESY_EMAIL` + `RESY_PASSWORD` — optional, pre-seed Resy login
-   - `OPENTABLE_COOKIES` — optional, pre-seed OpenTable session
-5. Deploy — you'll get a URL like `https://reservation-bot-xxxx.onrender.com`
-
-The Render blueprint mounts a **1 GB persistent disk** at `/data` so jobs and credentials survive restarts.
-
-### Manual Docker deploy
-
-Works on Railway, Fly.io, or any VPS:
-
-```bash
-docker build -t reservation-bot .
-docker run -p 3000:3000 \
-  -e APP_PASSWORD=your-secret \
-  -e RESY_EMAIL=you@example.com \
-  -e RESY_PASSWORD=your-password \
-  -v reservation-bot-data:/data \
-  reservation-bot
-```
-
-## Environment variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `APP_PASSWORD` | **Yes (cloud)** | Basic-auth password for the whole app |
-| `DATA_DIR` | No | Data directory (default `./data`, use `/data` in Docker) |
-| `RESY_EMAIL` | No | Pre-seed Resy login |
-| `RESY_PASSWORD` | No | Pre-seed Resy login |
-| `RESY_AUTH_TOKEN` | No | Skip login if you have a token already |
-| `OPENTABLE_COOKIES` | No | Pre-seed OpenTable browser cookies |
-| `PORT` | No | Server port (set automatically on Render) |
-
-## Usage
-
-1. Go to **Settings** and connect your Resy account (or set env vars)
-2. Optionally connect OpenTable (paste browser cookies)
-3. Create a **New Snipe** with restaurant, date, times, and drop time
-4. Monitor progress on the **Jobs** page
-
-## Snipe modes
-
-### Drop snipe
-
-For restaurants that release reservations on a schedule (typically 30 days out at 9:00 AM ET):
-
-- Set your target dinner date and preferred times
-- Set the drop datetime (auto-suggested as 30 days prior at 9am)
-- Bot wakes 30 seconds early, polls every 200ms for 2 minutes, books first match
-
-### Poll snipe
-
-For catching cancellations:
-
-- Set poll interval (5s–60s)
-- Bot runs up to 24 hours until a matching slot appears
+---
 
 ## Disclaimer
 
-For personal use only. Automation may violate platform Terms of Service. Use responsibly.
+For personal use only. Automation may violate platform Terms of Service.

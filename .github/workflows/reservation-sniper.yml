@@ -1,0 +1,40 @@
+name: Reservation Sniper
+
+on:
+  schedule:
+    # Every 5 minutes (GitHub Actions minimum interval)
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      snipe_id:
+        description: "Run only this snipe ID (leave empty for all due snipes)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  snipe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run sniper
+        env:
+          RESY_EMAIL: ${{ secrets.RESY_EMAIL }}
+          RESY_PASSWORD: ${{ secrets.RESY_PASSWORD }}
+          RESY_API_KEY: ${{ secrets.RESY_API_KEY }}
+          RESY_AUTH_TOKEN: ${{ secrets.RESY_AUTH_TOKEN }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          SNIPE_ID: ${{ github.event.inputs.snipe_id }}
+        run: node scripts/run-snipes.mjs

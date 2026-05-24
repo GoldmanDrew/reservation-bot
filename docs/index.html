@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reservation Bot</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="logo">🎯</div>
+    <div>
+      <h1>Reservation Bot</h1>
+      <p class="subtitle">Free GitHub Actions sniper for Resy — inspired by <a href="https://x.com/0xLoris/status/1749493887113028036" target="_blank">0xLoris</a></p>
+    </div>
+  </header>
+
+  <main>
+    <section class="card steps">
+      <h2>How it works</h2>
+      <ol>
+        <li>Add <code>RESY_EMAIL</code> and <code>RESY_PASSWORD</code> to <a href="https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions" target="_blank">GitHub Secrets</a></li>
+        <li>Generate a snipe below and paste it into <code>config/snipes.yaml</code></li>
+        <li>Push to GitHub — Actions runs every 5 minutes automatically</li>
+        <li>Check <a href="https://github.com/GoldmanDrew/reservation-bot/actions" target="_blank">Actions tab</a> for results</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>Create a snipe</h2>
+      <form id="snipe-form">
+        <div class="grid">
+          <label>
+            Snipe ID
+            <input id="id" placeholder="carbone-june-15" required />
+          </label>
+          <label>
+            Restaurant name
+            <input id="name" placeholder="Carbone" required />
+          </label>
+          <label>
+            Resy venue ID
+            <input id="venue_id" placeholder="6194" required />
+            <span class="hint">Run <code>npm run search -- Carbone</code> locally to find this</span>
+          </label>
+          <label>
+            Target date
+            <input id="target_date" type="date" required />
+          </label>
+          <label>
+            Party size
+            <select id="party_size">
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </label>
+          <label>
+            Mode
+            <select id="mode">
+              <option value="drop">Drop snipe (timed release)</option>
+              <option value="poll">Keep watching (cancellations)</option>
+            </select>
+          </label>
+          <label id="drop-field">
+            Drop time (local)
+            <input id="drop_at" type="datetime-local" />
+            <span class="hint">When reservations release (e.g. 30 days out at 9:00 AM)</span>
+          </label>
+        </div>
+
+        <label>
+          Preferred times (priority order)
+          <div id="times-list" class="times-list"></div>
+          <div class="times-add">
+            <input id="new_time" placeholder="19:00 or 7:00 PM" />
+            <button type="button" id="add-time">Add</button>
+          </div>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="dry_run" checked />
+          Dry run (test without booking)
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="enabled" checked />
+          Enabled
+        </label>
+
+        <button type="submit" class="primary">Generate YAML</button>
+      </form>
+    </section>
+
+    <section class="card" id="output-section" hidden>
+      <div class="output-header">
+        <h2>Your snipe config</h2>
+        <button type="button" id="copy-yaml">Copy YAML</button>
+      </div>
+      <p class="hint">Add this to <code>config/snipes.yaml</code> under the <code>snipes:</code> list, then push to GitHub.</p>
+      <pre id="yaml-output"></pre>
+      <a class="edit-link" href="https://github.com/GoldmanDrew/reservation-bot/edit/main/config/snipes.yaml" target="_blank">
+        Edit snipes.yaml on GitHub →
+      </a>
+    </section>
+
+    <section class="card">
+      <h2>Find venue ID</h2>
+      <p>Clone the repo locally and run:</p>
+      <pre>npm install
+npm run search -- "Carbone"</pre>
+      <p class="hint">Copy the <code>venue_id</code> from the output into the form above.</p>
+    </section>
+
+    <section class="card limits">
+      <h2>Limitations (free tier)</h2>
+      <ul>
+        <li>GitHub Actions runs at most <strong>every 5 minutes</strong> — drop snipes wake up to 6 min before <code>drop_at</code> and poll aggressively in-process</li>
+        <li>Resy only for now (OpenTable requires browser session)</li>
+        <li>Set <code>dry_run: false</code> only when you're ready to book for real</li>
+        <li>Optional: add <code>WEBHOOK_URL</code> secret for Discord/Telegram notifications on success</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://github.com/GoldmanDrew/reservation-bot">GitHub</a>
+    ·
+    <a href="https://github.com/GoldmanDrew/reservation-bot/actions">Actions</a>
+    ·
+    Personal use only
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
