@@ -57,6 +57,21 @@ main {
   margin-bottom: 1rem;
 }
 
+.steps ul {
+  margin-top: 0.5rem;
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.cookie-steps {
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.cookie-steps li { margin-bottom: 0.375rem; }
+
 .steps ol {
   padding-left: 1.25rem;
   color: var(--muted);

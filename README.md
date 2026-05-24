@@ -1,114 +1,111 @@
 # Reservation Bot
 
-**Free** GitHub Pages UI + GitHub Actions sniper for Resy reservations.
-
-Inspired by [0xLoris's reservation bots](https://x.com/0xLoris/status/1749493887113028036).
+**Free** GitHub Pages UI + GitHub Actions sniper for **OpenTable** and Resy.
 
 | | |
 |---|---|
-| **UI (GitHub Pages)** | [goldmandrew.github.io/reservation-bot](https://goldmandrew.github.io/reservation-bot/) |
+| **UI** | [goldmandrew.github.io/reservation-bot](https://goldmandrew.github.io/reservation-bot/) |
 | **Repo** | [github.com/GoldmanDrew/reservation-bot](https://github.com/GoldmanDrew/reservation-bot) |
 | **Actions** | [View workflow runs](https://github.com/GoldmanDrew/reservation-bot/actions) |
 
 ---
 
-## Quick setup (5 minutes, $0)
+## Quick setup — OpenTable ($0)
 
-### 1. Add GitHub Secrets
+### 1. Get browser cookies
 
-Go to **Settings → Secrets and variables → Actions** and add:
+1. Log into [opentable.com](https://www.opentable.com) in Chrome
+2. F12 → **Network** → refresh
+3. Click any `opentable.com` request → copy **Cookie** header (full value)
+4. Optional: copy **x-csrf-token** header
+
+### 2. Add GitHub Secrets
+
+[Settings → Secrets → Actions](https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions)
 
 | Secret | Required | Description |
 |---|---|---|
-| `RESY_EMAIL` | Yes | Your Resy login email |
-| `RESY_PASSWORD` | Yes | Your Resy login password |
-| `WEBHOOK_URL` | No | Discord/Telegram webhook for success notifications |
-
-### 2. Enable GitHub Pages
-
-Go to **Settings → Pages → Build and deployment**:
-- Source: **GitHub Actions**
-
-(Pages deploys automatically when you push to `main`.)
+| `OPENTABLE_COOKIES` | **Yes** | Full Cookie header from step 1 |
+| `OPENTABLE_CSRF_TOKEN` | No | x-csrf-token if present |
+| `WEBHOOK_URL` | No | Discord/Telegram webhook — includes booking link |
+| `RESY_EMAIL` / `RESY_PASSWORD` | No | Only if using Resy snipes |
 
 ### 3. Create a snipe
 
-1. Open the [GitHub Pages UI](https://goldmandrew.github.io/reservation-bot/)
-2. Fill in restaurant details and click **Generate YAML**
-3. Paste the YAML into [`config/snipes.yaml`](https://github.com/GoldmanDrew/reservation-bot/edit/main/config/snipes.yaml)
+1. Open the [Pages UI](https://goldmandrew.github.io/reservation-bot/) → select **OpenTable**
+2. Enter restaurant ID (`rid` from OpenTable URL, e.g. `8033`)
+3. Generate YAML → paste into [`config/snipes.yaml`](https://github.com/GoldmanDrew/reservation-bot/edit/main/config/snipes.yaml)
 4. Push to `main`
 
-### 4. Find venue ID (one-time)
+### 4. When a slot is found
 
-Clone locally to search Resy:
-
-```bash
-git clone https://github.com/GoldmanDrew/reservation-bot.git
-cd reservation-bot
-npm install
-npm run search -- "Carbone"
-```
-
-Copy the `venue_id` into your snipe config.
+- Check the [Actions run summary](https://github.com/GoldmanDrew/reservation-bot/actions) for **Complete booking →** link
+- Or get the link via Discord/Telegram if `WEBHOOK_URL` is set
+- Click to confirm on OpenTable (~5 seconds)
 
 ---
 
-## How the sniper works
-
-GitHub Actions runs **every 5 minutes** (free tier minimum):
-
-| Mode | Behavior |
-|---|---|
-| **Drop snipe** | If `drop_at` is within 6 minutes, the job sleeps until 30s before drop, then polls every **200ms** for 3 minutes |
-| **Poll snipe** | Checks availability once per workflow run (every 5 min) |
-
-### Example `config/snipes.yaml`
+## Example OpenTable snipe
 
 ```yaml
 snipes:
   - id: carbone-june-15
     enabled: true
-    platform: resy
-    venue_id: "6194"
+    platform: opentable
+    venue_id: "8033"
     restaurant_name: Carbone
     target_date: "2026-06-15"
     party_size: 2
     preferred_times: ["19:00", "19:30", "20:00"]
     mode: drop
     drop_at: "2026-05-16T13:00:00.000Z"
-    dry_run: true
+    dry_run: false
 ```
 
-Set `dry_run: false` when ready to book for real. Set `enabled: false` after a successful booking.
+Find `venue_id`: open restaurant on OpenTable → URL contains `rid=8033`, or:
 
-### Manual run
-
-Go to **Actions → Reservation Sniper → Run workflow** to trigger immediately.
+```bash
+set OPENTABLE_COOKIES=paste-your-cookies-here
+npm run search:opentable -- "Carbone"
+```
 
 ---
 
-## Run locally (optional)
+## How it works
 
-The repo also includes a full Next.js app for local sniping with a live UI:
+| Mode | Behavior |
+|---|---|
+| **Drop snipe** | When `drop_at` is within 6 min, polls every **200ms** for 3 minutes |
+| **Poll snipe** | Checks once per Actions run (every 5 min) |
+
+**OpenTable:** Finds slot → sends pre-filled booking URL (auto-book attempted, handoff is fallback).
+
+**Resy:** Full auto-book if `RESY_EMAIL` + `RESY_PASSWORD` secrets are set.
+
+---
+
+## Cookie refresh
+
+OpenTable cookies expire. When Actions fail with auth errors:
+
+1. Re-copy cookies from Chrome
+2. Update `OPENTABLE_COOKIES` secret
+3. Re-run workflow manually
+
+---
+
+## Local dev (optional)
 
 ```bash
 npm install
-npm run dev          # Web UI at localhost:3000
-npm run snipe        # Run sniper from config/snipes.yaml
-npm run search -- "Carbone"
+set OPENTABLE_COOKIES=...
+npm run snipe              # run from config/snipes.yaml
+npm run search:opentable -- "Carbone"
+npm run dev                # full Next.js UI
 ```
-
----
-
-## Limitations
-
-- **5-minute cron minimum** — drop snipes compensate by polling aggressively once the workflow starts near `drop_at`
-- **Resy only** in Actions mode (OpenTable needs browser cookies)
-- **GitHub Actions free tier**: 2,000 min/month for private repos, unlimited for public
-- No payment info required anywhere
 
 ---
 
 ## Disclaimer
 
-For personal use only. Automation may violate platform Terms of Service.
+Personal use only. May violate platform Terms of Service.

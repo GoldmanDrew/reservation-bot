@@ -1,7 +1,8 @@
 export const DEFAULT_RESY_API_KEY = "VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5";
 
 export function parseTimeToMinutes(time) {
-  const normalized = time.trim().toUpperCase();  const match12 = normalized.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  const normalized = time.trim().toUpperCase();
+  const match12 = normalized.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
   if (!match12) return -1;
 
   let hours = parseInt(match12[1], 10);
@@ -66,4 +67,10 @@ export function suggestDropTime(targetDate, daysBefore = 30) {
   d.setUTCDate(d.getUTCDate() - daysBefore);
   const dropDate = d.toISOString().slice(0, 10);
   return `${dropDate}T09:00:00`;
+}
+
+export function toOpenTableDateTime(date, minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${date}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
 }

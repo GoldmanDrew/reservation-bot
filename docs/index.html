@@ -11,7 +11,7 @@
     <div class="logo">🎯</div>
     <div>
       <h1>Reservation Bot</h1>
-      <p class="subtitle">Free GitHub Actions sniper for Resy — inspired by <a href="https://x.com/0xLoris/status/1749493887113028036" target="_blank">0xLoris</a></p>
+      <p class="subtitle">Free GitHub Actions sniper for OpenTable & Resy</p>
     </div>
   </header>
 
@@ -19,17 +19,43 @@
     <section class="card steps">
       <h2>How it works</h2>
       <ol>
-        <li>Add <code>RESY_EMAIL</code> and <code>RESY_PASSWORD</code> to <a href="https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions" target="_blank">GitHub Secrets</a></li>
-        <li>Generate a snipe below and paste it into <code>config/snipes.yaml</code></li>
-        <li>Push to GitHub — Actions runs every 5 minutes automatically</li>
-        <li>Check <a href="https://github.com/GoldmanDrew/reservation-bot/actions" target="_blank">Actions tab</a> for results</li>
+        <li>Add secrets to <a href="https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions" target="_blank">GitHub Secrets</a>:
+          <ul>
+            <li><strong>OpenTable:</strong> <code>OPENTABLE_COOKIES</code> (required for OT)</li>
+            <li><strong>Resy:</strong> <code>RESY_EMAIL</code> + <code>RESY_PASSWORD</code> (optional)</li>
+            <li><strong>Alerts:</strong> <code>WEBHOOK_URL</code> (optional Discord/Telegram)</li>
+          </ul>
+        </li>
+        <li>Generate a snipe below → paste into <code>config/snipes.yaml</code></li>
+        <li>Push to GitHub — Actions runs every 5 minutes</li>
+        <li>OpenTable: click the booking link in Actions summary when a slot is found</li>
       </ol>
+    </section>
+
+    <section class="card">
+      <h2>OpenTable cookies (one-time setup)</h2>
+      <ol class="cookie-steps">
+        <li>Log into <a href="https://www.opentable.com" target="_blank">opentable.com</a> in Chrome</li>
+        <li>F12 → <strong>Network</strong> → refresh the page</li>
+        <li>Click any request to <code>opentable.com</code></li>
+        <li>Copy the full <strong>Cookie</strong> header value</li>
+        <li>Paste as <code>OPENTABLE_COOKIES</code> in GitHub Secrets</li>
+        <li>Optional: copy <code>x-csrf-token</code> → <code>OPENTABLE_CSRF_TOKEN</code></li>
+      </ol>
+      <p class="hint">Cookies expire every few days — re-paste when snipes fail with auth errors.</p>
     </section>
 
     <section class="card">
       <h2>Create a snipe</h2>
       <form id="snipe-form">
         <div class="grid">
+          <label>
+            Platform
+            <select id="platform">
+              <option value="opentable" selected>OpenTable</option>
+              <option value="resy">Resy</option>
+            </select>
+          </label>
           <label>
             Snipe ID
             <input id="id" placeholder="carbone-june-15" required />
@@ -39,9 +65,9 @@
             <input id="name" placeholder="Carbone" required />
           </label>
           <label>
-            Resy venue ID
-            <input id="venue_id" placeholder="6194" required />
-            <span class="hint">Run <code>npm run search -- Carbone</code> locally to find this</span>
+            <span id="venue-label">Restaurant ID (rid)</span>
+            <input id="venue_id" placeholder="8033" required />
+            <span class="hint" id="venue-hint">From OpenTable URL: ?rid=8033 or run search locally</span>
           </label>
           <label>
             Target date
@@ -82,7 +108,7 @@
 
         <label class="checkbox">
           <input type="checkbox" id="dry_run" checked />
-          Dry run (test without booking)
+          Dry run (test without booking / notification)
         </label>
 
         <label class="checkbox">
@@ -107,20 +133,22 @@
     </section>
 
     <section class="card">
-      <h2>Find venue ID</h2>
-      <p>Clone the repo locally and run:</p>
-      <pre>npm install
-npm run search -- "Carbone"</pre>
-      <p class="hint">Copy the <code>venue_id</code> from the output into the form above.</p>
+      <h2>Find restaurant ID</h2>
+      <p><strong>OpenTable</strong> — from the booking URL or search locally:</p>
+      <pre>set OPENTABLE_COOKIES=your-cookie-string
+npm run search:opentable -- "Carbone"</pre>
+      <p class="hint">Or open the restaurant on OpenTable and copy <code>rid=</code> from the URL.</p>
+      <p style="margin-top:1rem"><strong>Resy</strong>:</p>
+      <pre>npm run search -- "Carbone"</pre>
     </section>
 
     <section class="card limits">
-      <h2>Limitations (free tier)</h2>
+      <h2>OpenTable notes</h2>
       <ul>
-        <li>GitHub Actions runs at most <strong>every 5 minutes</strong> — drop snipes wake up to 6 min before <code>drop_at</code> and poll aggressively in-process</li>
-        <li>Resy only for now (OpenTable requires browser session)</li>
-        <li>Set <code>dry_run: false</code> only when you're ready to book for real</li>
-        <li>Optional: add <code>WEBHOOK_URL</code> secret for Discord/Telegram notifications on success</li>
+        <li>Bot finds slots and sends a <strong>pre-filled booking URL</strong> — you confirm in browser (~5 sec)</li>
+        <li>Full auto-book is attempted but often blocked; the handoff link is the reliable path</li>
+        <li>Refresh <code>OPENTABLE_COOKIES</code> when you get auth errors</li>
+        <li>GitHub Actions runs every <strong>5 minutes</strong>; drop snipes poll at 200ms once triggered</li>
       </ul>
     </section>
   </main>

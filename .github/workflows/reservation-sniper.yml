@@ -35,6 +35,8 @@ jobs:
           RESY_PASSWORD: ${{ secrets.RESY_PASSWORD }}
           RESY_API_KEY: ${{ secrets.RESY_API_KEY }}
           RESY_AUTH_TOKEN: ${{ secrets.RESY_AUTH_TOKEN }}
+          OPENTABLE_COOKIES: ${{ secrets.OPENTABLE_COOKIES }}
+          OPENTABLE_CSRF_TOKEN: ${{ secrets.OPENTABLE_CSRF_TOKEN }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           SNIPE_ID: ${{ github.event.inputs.snipe_id }}
         run: node scripts/run-snipes.mjs

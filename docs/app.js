@@ -2,6 +2,9 @@ const times = ["19:00", "19:30", "20:00"];
 
 const els = {
   form: document.getElementById("snipe-form"),
+  platform: document.getElementById("platform"),
+  venueLabel: document.getElementById("venue-label"),
+  venueHint: document.getElementById("venue-hint"),
   timesList: document.getElementById("times-list"),
   newTime: document.getElementById("new_time"),
   addTime: document.getElementById("add-time"),
@@ -13,6 +16,15 @@ const els = {
   yamlOutput: document.getElementById("yaml-output"),
   copyYaml: document.getElementById("copy-yaml"),
 };
+
+function updatePlatformHints() {
+  const isOT = els.platform.value === "opentable";
+  els.venueLabel.textContent = isOT ? "Restaurant ID (rid)" : "Resy venue ID";
+  document.getElementById("venue_id").placeholder = isOT ? "8033" : "6194";
+  els.venueHint.textContent = isOT
+    ? "From OpenTable URL ?rid=8033 or npm run search:opentable"
+    : "Run npm run search -- \"Carbone\" locally";
+}
 
 function renderTimes() {
   els.timesList.innerHTML = times
@@ -53,6 +65,8 @@ function slugify(str) {
     .replace(/^-|-$/g, "");
 }
 
+els.platform.addEventListener("change", updatePlatformHints);
+
 els.addTime.addEventListener("click", () => {
   const t = els.newTime.value.trim();
   if (t && !times.includes(t)) {
@@ -92,6 +106,7 @@ els.form.addEventListener("submit", (e) => {
     return;
   }
 
+  const platform = els.platform.value;
   const id = document.getElementById("id").value.trim();
   const name = document.getElementById("name").value.trim();
   const venueId = document.getElementById("venue_id").value.trim();
@@ -104,7 +119,7 @@ els.form.addEventListener("submit", (e) => {
   const entry = {
     id,
     enabled,
-    platform: "resy",
+    platform,
     venue_id: venueId,
     restaurant_name: name,
     target_date: targetDate,
@@ -125,17 +140,17 @@ els.form.addEventListener("submit", (e) => {
 
   const lines = ["  - id: " + entry.id];
   lines.push("    enabled: " + entry.enabled);
-  lines.push("    platform: resy");
+  lines.push("    platform: " + entry.platform);
   lines.push('    venue_id: "' + entry.venue_id + '"');
   lines.push("    restaurant_name: " + entry.restaurant_name);
-  lines.push("    target_date: \"" + entry.target_date + "\"");
+  lines.push('    target_date: "' + entry.target_date + '"');
   lines.push("    party_size: " + entry.party_size);
   lines.push("    preferred_times:");
   for (const t of entry.preferred_times) {
     lines.push('      - "' + t + '"');
   }
   lines.push("    mode: " + entry.mode);
-  if (entry.drop_at) lines.push("    drop_at: \"" + entry.drop_at + "\"");
+  if (entry.drop_at) lines.push('    drop_at: "' + entry.drop_at + '"');
   lines.push("    dry_run: " + entry.dry_run);
 
   els.yamlOutput.textContent = lines.join("\n");
@@ -150,10 +165,10 @@ els.copyYaml.addEventListener("click", () => {
   });
 });
 
-// Defaults
 const tomorrow = new Date();
 tomorrow.setDate(tomorrow.getDate() + 30);
 els.targetDate.value = tomorrow.toISOString().slice(0, 10);
 els.dropAt.value = suggestDropTime(els.targetDate.value);
 els.dropField.hidden = false;
+updatePlatformHints();
 renderTimes();

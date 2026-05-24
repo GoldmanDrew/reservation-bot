@@ -1,11 +1,10 @@
 # Copy to config/snipes.yaml and customize.
-# Use the GitHub Pages UI to generate entries: Settings → Pages → deploy from docs/
 
 snipes:
-  - id: example-carbone
+  - id: example-carbone-ot
     enabled: false
-    platform: resy
-    venue_id: "6194"
+    platform: opentable
+    venue_id: "8033"
     restaurant_name: Carbone
     target_date: "2026-06-15"
     party_size: 2
@@ -17,10 +16,10 @@ snipes:
     drop_at: "2026-05-16T13:00:00.000Z"
     dry_run: true
 
-  - id: example-poll
+  - id: example-carbone-ot-poll
     enabled: false
-    platform: resy
-    venue_id: "6194"
+    platform: opentable
+    venue_id: "8033"
     restaurant_name: Carbone
     target_date: "2026-06-15"
     party_size: 2
