@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-surface text-gray-100 antialiased;
+  min-height: 100vh;
+}
+
+input,
+select,
+textarea,
+button {
+  @apply outline-none;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-surface-border bg-surface-raised p-6;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-surface-border bg-surface px-3 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:border-accent;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-muted;
+  }
+
+  .btn-secondary {
+    @apply btn border border-surface-border bg-surface-raised text-gray-200 hover:bg-surface-border;
+  }
+
+  .btn-danger {
+    @apply btn bg-danger/20 text-red-300 hover:bg-danger/30;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .badge-resy {
+    @apply badge bg-red-500/20 text-red-300;
+  }
+
+  .badge-opentable {
+    @apply badge bg-orange-500/20 text-orange-300;
+  }
+}

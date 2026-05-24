@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: reservation-bot
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /data
+      - key: APP_PASSWORD
+        sync: false
+      - key: RESY_EMAIL
+        sync: false
+      - key: RESY_PASSWORD
+        sync: false
+      - key: OPENTABLE_COOKIES
+        sync: false
+    disk:
+      name: reservation-bot-data
+      mountPath: /data
+      sizeGB: 1
