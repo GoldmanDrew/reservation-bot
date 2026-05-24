@@ -1,5 +1,9 @@
 # Reservation Bot
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/GoldmanDrew/reservation-bot)
+
+**GitHub:** [github.com/GoldmanDrew/reservation-bot](https://github.com/GoldmanDrew/reservation-bot)
+
 A web app to snipe restaurant reservations on **Resy** and **OpenTable** — inspired by [0xLoris's reservation bots](https://x.com/0xLoris/status/1749493887113028036).
 
 Enter a restaurant, set your preferred times, and the bot polls at drop time (or continuously) to grab a slot the instant it appears.
