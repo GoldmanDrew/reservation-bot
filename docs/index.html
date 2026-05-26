@@ -22,7 +22,7 @@
       <ol>
         <li><strong>Sign in with GitHub</strong> (top right) — no PAT to paste into Settings</li>
         <li><strong>Connect OpenTable</strong> below — saves cookies to repo secrets from this page</li>
-        <li>Add <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code> in <a href="https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions" target="_blank">GitHub Secrets</a> (or save via API later)</li>
+        <li>Add Telegram below (or in <a href="https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions" target="_blank">GitHub Secrets</a>)</li>
         <li>Create a snipe with the 4-field form — runs Create Snipe workflow automatically</li>
       </ol>
     </section>
@@ -50,6 +50,28 @@
         </label>
         <button type="submit" class="secondary" id="save-cookies-btn">Save to GitHub Secrets</button>
         <p id="ot-status" class="status-msg" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Connect Telegram</h2>
+      <p class="section-note">
+        Message your bot <code>/start</code> first — the bot replies with your chat ID (checked every 5 min, or click Test now).
+      </p>
+      <form id="telegram-form">
+        <label>
+          Bot token
+          <input id="tg_token" class="mono" placeholder="From @BotFather" />
+        </label>
+        <label>
+          Chat ID
+          <input id="tg_chat_id" class="mono" placeholder="From /start reply" />
+        </label>
+        <div class="button-row">
+          <button type="submit" class="secondary" id="save-telegram-btn">Save to GitHub Secrets</button>
+          <button type="button" class="secondary" id="test-telegram-btn">Test Telegram</button>
+        </div>
+        <p id="tg-status" class="status-msg" aria-live="polite"></p>
       </form>
     </section>
 

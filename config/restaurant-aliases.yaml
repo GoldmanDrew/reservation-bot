@@ -1,0 +1,18 @@
+# Known restaurant name aliases → OpenTable slug / venue_id
+# Keys: lowercase trimmed name
+
+aliases:
+  don angie:
+    platform: opentable
+    slug: don-angie-new-york
+    name: Don Angie
+  san sabino:
+    platform: opentable
+    slug: san-sabino-new-york
+    venue_id: "76686487"
+    name: San Sabino
+  carbone:
+    platform: opentable
+    slug: carbone-new-york
+    venue_id: "8033"
+    name: Carbone

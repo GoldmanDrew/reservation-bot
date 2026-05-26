@@ -32,9 +32,9 @@ Open **[goldmandrew.github.io/reservation-bot](https://goldmandrew.github.io/res
 
 1. **Sign in with GitHub** — token stays in your browser (no PAT in Settings)
 2. **Connect OpenTable** — paste cookies once; saved to `OPENTABLE_COOKIES` secret via GitHub API
-3. Add Telegram in [GitHub Secrets](https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions):
-   - `TELEGRAM_BOT_TOKEN`
-   - `TELEGRAM_CHAT_ID`
+3. **Connect Telegram** — message your bot **`/start`** (bot replies with chat ID within ~5 min, or click **Test Telegram**), then save token + chat ID on Pages
+
+Or set secrets manually: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 
 ### 3. Create a snipe (4 fields)
 

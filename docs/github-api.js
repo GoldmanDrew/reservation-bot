@@ -2,6 +2,7 @@
 (function (global) {
   const GH_REPO = "GoldmanDrew/reservation-bot";
   const DISPATCH_EVENT = "create-snipe";
+  const TEST_TELEGRAM_EVENT = "test-telegram";
   let sodiumReady = null;
 
   function apiHeaders(token) {
@@ -102,10 +103,20 @@
     return value;
   }
 
+  async function dispatchTestTelegram(token) {
+    return githubFetch(token, `/repos/${GH_REPO}/dispatches`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event_type: TEST_TELEGRAM_EVENT, client_payload: {} }),
+    });
+  }
+
   global.ReservationGitHub = {
     GH_REPO,
     DISPATCH_EVENT,
+    TEST_TELEGRAM_EVENT,
     dispatchCreateSnipe,
+    dispatchTestTelegram,
     putRepoSecret,
     normalizeCookieInput,
   };

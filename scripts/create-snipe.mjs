@@ -81,8 +81,16 @@ async function main() {
   );
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error(err.message);
   if (err.matches) console.error(JSON.stringify(err.matches, null, 2));
+  try {
+    await sendNotification(
+      `Create snipe failed: ${process.env.RESTAURANT_NAME ?? "unknown"}`,
+      err.message
+    );
+  } catch {
+    // ignore notification errors
+  }
   process.exit(1);
 });

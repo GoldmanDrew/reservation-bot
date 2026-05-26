@@ -15,6 +15,7 @@ import { slugify } from "./lib/snipes-config.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DROP_RULES_PATH = path.join(__dirname, "..", "config", "drop-rules.yaml");
+const ALIASES_PATH = path.join(__dirname, "..", "config", "restaurant-aliases.yaml");
 
 function parseArgs(argv) {
   const out = {};
@@ -32,8 +33,92 @@ function similarity(a, b) {
   const na = a.toLowerCase().replace(/[^a-z0-9]/g, "");
   const nb = b.toLowerCase().replace(/[^a-z0-9]/g, "");
   if (na === nb) return 1;
-  if (na.includes(nb) || nb.includes(na)) return 0.8;
+  if (na.includes(nb) || nb.includes(na)) return 0.85;
   return 0;
+}
+
+function scoreMatch(query, candidateName) {
+  const q = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+  const c = candidateName.toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+  if (q === c) return 1;
+  const qTokens = q.split(/\s+/).filter(Boolean);
+  const cTokens = c.split(/\s+/).filter(Boolean);
+  if (
+    qTokens.length > 0 &&
+    qTokens.every((token) =>
+      cTokens.some((ct) => ct === token || ct.includes(token) || token.includes(ct))
+    )
+  ) {
+    return 0.95;
+  }
+  return similarity(query, candidateName);
+}
+
+function loadAliases() {
+  if (!fs.existsSync(ALIASES_PATH)) return {};
+  const doc = yaml.load(fs.readFileSync(ALIASES_PATH, "utf-8")) ?? {};
+  return doc.aliases ?? {};
+}
+
+function normalizeVenueId(result) {
+  const id = result.venueId ?? result.venue_id;
+  if (id == null) return "";
+  if (typeof id === "object") {
+    return String(id.resy_id ?? id.id ?? id.venue_id ?? "");
+  }
+  return String(id);
+}
+
+async function tryOpenTableSlugGuesses(name, config) {
+  const base = slugify(name);
+  const slugs = [`${base}-new-york`, `${base}-nyc`, base];
+  for (const slug of slugs) {
+    const resolved = await resolveOpenTableBySlug(slug, config);
+    if (resolved && scoreMatch(name, resolved.name) >= 0.8) {
+      return {
+        platform: "opentable",
+        venue_id: String(resolved.venueId),
+        venueId: String(resolved.venueId),
+        name: resolved.name,
+        slug: resolved.slug ?? slug,
+        url: resolved.url,
+        location: resolved.location,
+        confidence: "high",
+      };
+    }
+  }
+  return null;
+}
+
+async function resolveFromAlias(alias, name, config) {
+  if (alias.slug && config) {
+    const resolved = await resolveOpenTableBySlug(alias.slug, config);
+    if (resolved) {
+      return {
+        platform: alias.platform ?? "opentable",
+        venue_id: String(resolved.venueId),
+        venueId: String(resolved.venueId),
+        name: alias.name ?? resolved.name,
+        slug: alias.slug ?? resolved.slug,
+        url: resolved.url,
+        location: resolved.location,
+        confidence: "high",
+      };
+    }
+  }
+
+  if (alias.venue_id) {
+    return {
+      platform: alias.platform ?? "opentable",
+      venue_id: String(alias.venue_id),
+      venueId: String(alias.venue_id),
+      name: alias.name ?? name,
+      slug: alias.slug,
+      confidence: "high",
+    };
+  }
+
+  return null;
 }
 
 function parseUrl(input) {
@@ -89,14 +174,43 @@ export async function resolveRestaurant(input, options = {}) {
   }
 
   const name = input.trim();
+  const aliases = loadAliases();
+  const alias = aliases[name.toLowerCase()];
+  let otConfig = null;
+
+  try {
+    otConfig = getOpenTableConfigFromEnv();
+  } catch {
+    // OpenTable optional for URL-only resolution
+  }
+
+  if (alias) {
+    if (otConfig) {
+      const fromAlias = await resolveFromAlias(alias, name, otConfig);
+      if (fromAlias) return fromAlias;
+    } else if (alias.venue_id) {
+      return {
+        platform: alias.platform ?? "opentable",
+        venue_id: String(alias.venue_id),
+        venueId: String(alias.venue_id),
+        name: alias.name ?? name,
+        slug: alias.slug,
+        confidence: "high",
+      };
+    }
+  }
+
   let otResults = [];
   let resyResults = [];
 
-  try {
-    const config = getOpenTableConfigFromEnv();
-    otResults = await searchOpenTableRestaurants(config, name, lat, lon);
-  } catch {
-    // OpenTable search optional if no cookies
+  if (otConfig) {
+    try {
+      const slugHit = await tryOpenTableSlugGuesses(name, otConfig);
+      if (slugHit) return slugHit;
+      otResults = await searchOpenTableRestaurants(otConfig, name, lat, lon);
+    } catch (err) {
+      console.warn("OpenTable search failed:", err.message);
+    }
   }
 
   try {
@@ -106,21 +220,41 @@ export async function resolveRestaurant(input, options = {}) {
   }
 
   const combined = [
-    ...otResults.map((r) => ({ ...r, platform: "opentable", score: similarity(name, r.name) + 0.05 })),
-    ...resyResults.map((r) => ({ ...r, platform: "resy", score: similarity(name, r.name) })),
-  ].sort((a, b) => b.score - a.score);
+    ...otResults.map((r) => ({
+      ...r,
+      platform: "opentable",
+      score: scoreMatch(name, r.name) + 0.05,
+    })),
+    ...(otResults.length === 0
+      ? resyResults.map((r) => ({
+          ...r,
+          platform: "resy",
+          score: scoreMatch(name, r.name),
+        }))
+      : []),
+  ]
+    .filter((r) => r.score >= 0.5)
+    .sort((a, b) => b.score - a.score);
 
   if (combined.length === 0) {
-    throw new Error(`No restaurants found for "${name}"`);
+    throw new Error(
+      `No restaurants found for "${name}" on OpenTable. Try the exact name, an OpenTable URL, or add an alias in config/restaurant-aliases.yaml`
+    );
   }
 
   const best = combined[0];
-  if (combined.length > 1 && best.score < 0.8) {
+  const runnerUp = combined[1];
+  if (
+    combined.length > 1 &&
+    best.score < 0.9 &&
+    (!runnerUp || best.score - runnerUp.score < 0.08)
+  ) {
     const top = combined.slice(0, 5).map((r) => ({
       platform: r.platform,
       name: r.name,
-      venue_id: r.venueId ?? r.venue_id,
+      venue_id: normalizeVenueId(r),
       location: r.location,
+      score: r.score,
     }));
     const err = new Error(`Ambiguous match for "${name}" — pick one explicitly`);
     err.matches = top;
@@ -129,8 +263,8 @@ export async function resolveRestaurant(input, options = {}) {
 
   return {
     platform: best.platform,
-    venue_id: String(best.venueId ?? best.venue_id),
-    venueId: String(best.venueId ?? best.venue_id),
+    venue_id: normalizeVenueId(best),
+    venueId: normalizeVenueId(best),
     name: best.name,
     slug: best.slug,
     url: best.url,

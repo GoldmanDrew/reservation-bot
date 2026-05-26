@@ -62,15 +62,23 @@ export async function searchResyRestaurants(query, lat = 40.7128, lon = -74.006)
   const hits = data.search?.hits ?? [];
   return hits
     .filter((h) => h.id && h.name)
-    .map((h) => ({
-      platform: "resy",
-      venueId: String(h.id),
-      name: h.name,
-      location: h.location?.name,
-      url: h.url_slug
-        ? `https://resy.com/cities/${h.location?.code ?? "ny"}/venues/${h.url_slug}`
-        : undefined,
-    }));
+    .map((h) => {
+      const id = h.id;
+      const venueId =
+        typeof id === "object"
+          ? String(id.resy_id ?? id.id ?? id.venue_id ?? "")
+          : String(id);
+      return {
+        platform: "resy",
+        venueId,
+        name: h.name,
+        location: h.location?.name,
+        url: h.url_slug
+          ? `https://resy.com/cities/${h.location?.code ?? "ny"}/venues/${h.url_slug}`
+          : undefined,
+      };
+    })
+    .filter((r) => r.venueId);
 }
 
 export async function checkResyAvailability(config, venueId, date, partySize) {

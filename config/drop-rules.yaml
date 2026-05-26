@@ -1,6 +1,20 @@
 # Known drop rules for NYC restaurants (days before target date, local release time)
 # Keys: OpenTable slug, venue_id, or normalized restaurant name
 
+don-angie-new-york:
+  days_before: 7
+  hour: 9
+  minute: 0
+  timezone: America/New_York
+  source: opentable_blog
+
+13161123:
+  days_before: 7
+  hour: 9
+  minute: 0
+  timezone: America/New_York
+  source: opentable_blog
+
 san-sabino-new-york:
   days_before: 30
   hour: 9

@@ -10,6 +10,9 @@ const deviceOpenBtn = document.getElementById("device-open");
 const snipeStatus = document.getElementById("snipe-status");
 const otForm = document.getElementById("opentable-form");
 const otStatus = document.getElementById("ot-status");
+const tgForm = document.getElementById("telegram-form");
+const tgStatus = document.getElementById("tg-status");
+const testTelegramBtn = document.getElementById("test-telegram-btn");
 
 let oauthConfig = null;
 let devicePollTimer = null;
@@ -204,6 +207,42 @@ otForm.addEventListener("submit", async (e) => {
     document.getElementById("ot_cookies").value = "";
   } catch (err) {
     setStatus(otStatus, err.message || String(err), true);
+  }
+});
+
+tgForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  setStatus(tgStatus, "Saving Telegram secrets…");
+
+  try {
+    const token = requireAuth();
+    const botToken = document.getElementById("tg_token").value.trim();
+    const chatId = document.getElementById("tg_chat_id").value.trim();
+
+    if (!botToken) throw new Error("Bot token is required");
+    if (!chatId) throw new Error("Chat ID is required — message your bot /start first");
+
+    await ReservationGitHub.putRepoSecret(token, "TELEGRAM_BOT_TOKEN", botToken);
+    await ReservationGitHub.putRepoSecret(token, "TELEGRAM_CHAT_ID", chatId);
+
+    setStatus(tgStatus, "Saved TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.");
+  } catch (err) {
+    setStatus(tgStatus, err.message || String(err), true);
+  }
+});
+
+testTelegramBtn.addEventListener("click", async () => {
+  setStatus(tgStatus, "Running Test Telegram workflow…");
+
+  try {
+    const token = requireAuth();
+    await ReservationGitHub.dispatchTestTelegram(token);
+    setStatus(
+      tgStatus,
+      "Test workflow dispatched. Message /start to your bot if you still need your chat ID."
+    );
+  } catch (err) {
+    setStatus(tgStatus, err.message || String(err), true);
   }
 });
 
