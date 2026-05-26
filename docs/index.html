@@ -9,20 +9,48 @@
 <body>
   <header>
     <div class="logo">🎯</div>
-    <div>
+    <div class="header-text">
       <h1>Reservation Bot</h1>
       <p class="subtitle">4 inputs → automated OpenTable sniper via GitHub Actions</p>
     </div>
+    <button type="button" id="auth-btn" class="auth-btn">Sign in with GitHub</button>
   </header>
 
   <main>
     <section class="card steps">
       <h2>One-time setup</h2>
       <ol>
-        <li>Add <code>OPENTABLE_COOKIES</code>, <code>TELEGRAM_BOT_TOKEN</code>, <code>TELEGRAM_CHAT_ID</code> to <a href="https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions" target="_blank">GitHub Secrets</a></li>
-        <li>Fill the form below → open Create Snipe workflow with values pre-filled</li>
-        <li>Click <strong>Run workflow</strong> — bot resolves restaurant ID, drop time, and schedules the snipe</li>
+        <li><strong>Sign in with GitHub</strong> (top right) — no PAT to paste into Settings</li>
+        <li><strong>Connect OpenTable</strong> below — saves cookies to repo secrets from this page</li>
+        <li>Add <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code> in <a href="https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions" target="_blank">GitHub Secrets</a> (or save via API later)</li>
+        <li>Create a snipe with the 4-field form — runs Create Snipe workflow automatically</li>
       </ol>
+    </section>
+
+    <section class="card">
+      <h2>Connect OpenTable</h2>
+      <p class="section-note">Paste cookies once here instead of GitHub Settings. Requires admin on the repo.</p>
+      <details class="details-block">
+        <summary>How to get OpenTable cookies</summary>
+        <ol class="cookie-steps">
+          <li>Log into opentable.com in Chrome</li>
+          <li>DevTools → Network → refresh</li>
+          <li>Click any request to www.opentable.com</li>
+          <li>Copy the full <code>cookie:</code> header value (not a URL)</li>
+        </ol>
+      </details>
+      <form id="opentable-form">
+        <label>
+          Cookie header value
+          <textarea id="ot_cookies" class="mono" rows="3" placeholder="authCke=...; otuvid=...; ..." required></textarea>
+        </label>
+        <label>
+          x-csrf-token (optional)
+          <input id="ot_csrf" class="mono" placeholder="Optional CSRF token" />
+        </label>
+        <button type="submit" class="secondary" id="save-cookies-btn">Save to GitHub Secrets</button>
+        <p id="ot-status" class="status-msg" aria-live="polite"></p>
+      </form>
     </section>
 
     <section class="card">
@@ -59,7 +87,8 @@
           Dry run first (recommended)
         </label>
 
-        <button type="submit" class="primary">Open Create Snipe Workflow</button>
+        <button type="submit" class="primary" id="create-snipe-btn">Create snipe</button>
+        <p id="snipe-status" class="status-msg" aria-live="polite"></p>
       </form>
     </section>
 
@@ -76,9 +105,9 @@
     </section>
 
     <section class="card">
-      <h2>Manual workflow link</h2>
+      <h2>Manual fallback</h2>
       <p>
-        <a id="workflow-link" href="https://github.com/GoldmanDrew/reservation-bot/actions/workflows/create-snipe.yml" target="_blank">
+        <a href="https://github.com/GoldmanDrew/reservation-bot/actions/workflows/create-snipe.yml" target="_blank">
           Actions → Create Snipe → Run workflow
         </a>
       </p>
@@ -91,6 +120,25 @@
     <a href="https://github.com/GoldmanDrew/reservation-bot/actions">Actions</a>
   </footer>
 
+  <div id="device-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="device-title">
+      <h3 id="device-title">Sign in with GitHub</h3>
+      <p class="section-note">
+        GitHub blocks token exchange from Pages — deploy the free Cloudflare proxy once
+        (<code>OAUTH_PROXY_URL</code> repo variable). See <code>docs/oauth-proxy/README.md</code>.
+      </p>
+      <div class="device-code-box">
+        <p>1. Open <a id="device-link" href="https://github.com/login/device" target="_blank">github.com/login/device</a></p>
+        <p>2. Enter this code:</p>
+        <div id="device-code" class="device-code">----</div>
+        <p id="device-wait">Waiting for authorization…</p>
+      </div>
+      <button type="button" class="secondary" id="device-cancel">Cancel</button>
+    </div>
+  </div>
+
+  <script src="oauth.js"></script>
+  <script src="github-api.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

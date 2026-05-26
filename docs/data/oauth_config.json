@@ -1,0 +1,6 @@
+{
+  "client_id": "",
+  "exchange_url": "",
+  "scopes": "repo",
+  "setup": "Set repo variables OAUTH_CLIENT_ID and OAUTH_PROXY_URL, then redeploy Pages."
+}

@@ -29,6 +29,8 @@ on:
         options:
           - "true"
           - "false"
+  repository_dispatch:
+    types: [create-snipe]
 
 permissions:
   contents: write
@@ -44,16 +46,41 @@ jobs:
         with:
           node-version: 20
 
+      - name: Resolve inputs
+        id: vars
+        env:
+          DISPATCH_TOKEN: ${{ secrets.SNIPE_DISPATCH_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            PAYLOAD='${{ toJson(github.event.client_payload) }}'
+            echo "restaurant_name=$(echo "$PAYLOAD" | jq -r '.restaurant_name // empty')" >> "$GITHUB_OUTPUT"
+            echo "target_date=$(echo "$PAYLOAD" | jq -r '.target_date // empty')" >> "$GITHUB_OUTPUT"
+            echo "party_size=$(echo "$PAYLOAD" | jq -r '.party_size // "2"')" >> "$GITHUB_OUTPUT"
+            echo "preferred_times=$(echo "$PAYLOAD" | jq -r '.preferred_times // "19:00,19:30,20:00"')" >> "$GITHUB_OUTPUT"
+            echo "dry_run=$(echo "$PAYLOAD" | jq -r '.dry_run // "true"')" >> "$GITHUB_OUTPUT"
+            TOKEN=$(echo "$PAYLOAD" | jq -r '.token // empty')
+            if [ -n "$DISPATCH_TOKEN" ] && [ -n "$TOKEN" ] && [ "$TOKEN" != "$DISPATCH_TOKEN" ]; then
+              echo "::error::Invalid create-snipe dispatch token"
+              exit 1
+            fi
+          else
+            echo "restaurant_name=${{ github.event.inputs.restaurant_name }}" >> "$GITHUB_OUTPUT"
+            echo "target_date=${{ github.event.inputs.target_date }}" >> "$GITHUB_OUTPUT"
+            echo "party_size=${{ github.event.inputs.party_size }}" >> "$GITHUB_OUTPUT"
+            echo "preferred_times=${{ github.event.inputs.preferred_times }}" >> "$GITHUB_OUTPUT"
+            echo "dry_run=${{ github.event.inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
         run: npm ci
 
       - name: Create snipe (resolve + drop time + save)
         env:
-          RESTAURANT_NAME: ${{ github.event.inputs.restaurant_name }}
-          TARGET_DATE: ${{ github.event.inputs.target_date }}
-          PARTY_SIZE: ${{ github.event.inputs.party_size }}
-          PREFERRED_TIMES: ${{ github.event.inputs.preferred_times }}
-          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          RESTAURANT_NAME: ${{ steps.vars.outputs.restaurant_name }}
+          TARGET_DATE: ${{ steps.vars.outputs.target_date }}
+          PARTY_SIZE: ${{ steps.vars.outputs.party_size }}
+          PREFERRED_TIMES: ${{ steps.vars.outputs.preferred_times }}
+          DRY_RUN: ${{ steps.vars.outputs.dry_run }}
           OPENTABLE_COOKIES: ${{ secrets.OPENTABLE_COOKIES }}
           OPENTABLE_CSRF_TOKEN: ${{ secrets.OPENTABLE_CSRF_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -61,9 +88,12 @@ jobs:
         run: node scripts/create-snipe.mjs
 
       - name: Commit snipe config
+        env:
+          RESTAURANT_NAME: ${{ steps.vars.outputs.restaurant_name }}
+          TARGET_DATE: ${{ steps.vars.outputs.target_date }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add config/snipes.yaml
-          git diff --staged --quiet || git commit -m "Add snipe: ${{ github.event.inputs.restaurant_name }} on ${{ github.event.inputs.target_date }}"
+          git diff --staged --quiet || git commit -m "Add snipe: ${RESTAURANT_NAME} on ${TARGET_DATE}"
           git push

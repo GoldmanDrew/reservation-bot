@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub sign-in · Reservation Bot</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1419;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .box { text-align: center; max-width: 420px; padding: 24px; }
+    .err { color: #f87171; margin-top: 12px; font-size: 14px; }
+    a { color: #3b82f6; }
+  </style>
+  <script src="../oauth.js"></script>
+</head>
+<body>
+  <div class="box">
+    <p id="msg">Completing GitHub sign-in…</p>
+    <p id="err" class="err" style="display:none"></p>
+  </div>
+  <script>
+    (async () => {
+      const msg = document.getElementById("msg");
+      const errEl = document.getElementById("err");
+      try {
+        const cfg = await ReservationOAuth.loadConfig();
+        if (!cfg.client_id) {
+          throw new Error(
+            "OAuth client_id not configured — set OAUTH_CLIENT_ID repo variable and redeploy Pages"
+          );
+        }
+        await ReservationOAuth.handleCallback(cfg.client_id, cfg);
+      } catch (e) {
+        msg.textContent = "Sign-in failed";
+        errEl.style.display = "block";
+        errEl.textContent = e.message || String(e);
+        const back = document.createElement("p");
+        back.innerHTML = `<a href="../index.html">Back to dashboard</a>`;
+        document.querySelector(".box").appendChild(back);
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -27,6 +27,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build OAuth config
+        env:
+          OAUTH_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
+          OAUTH_PROXY_URL: ${{ vars.OAUTH_PROXY_URL }}
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = 'docs/data/oauth_config.json';
+          let existing = {};
+          try { existing = JSON.parse(fs.readFileSync(path, 'utf8')); } catch {}
+          const payload = {
+            client_id: (process.env.OAUTH_CLIENT_ID || '').trim() || existing.client_id || '',
+            exchange_url: (process.env.OAUTH_PROXY_URL || '').trim() || existing.exchange_url || '',
+            scopes: 'repo',
+            setup: 'Create a GitHub OAuth App with Device Flow; callback https://goldmandrew.github.io/reservation-bot/oauth/callback.html',
+          };
+          fs.mkdirSync('docs/data', { recursive: true });
+          fs.writeFileSync(path, JSON.stringify(payload, null, 2) + '\n');
+          "
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
