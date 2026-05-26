@@ -120,6 +120,16 @@ button.secondary:hover { background: #3d4f6a; }
 
 .device-code-box { margin: 1rem 0; line-height: 1.6; color: var(--muted); font-size: 0.875rem; }
 
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .device-code {
   font-size: 1.75rem;
   letter-spacing: 0.25rem;

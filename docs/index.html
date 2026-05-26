@@ -128,9 +128,15 @@
         (<code>OAUTH_PROXY_URL</code> repo variable). See <code>docs/oauth-proxy/README.md</code>.
       </p>
       <div class="device-code-box">
-        <p>1. Open <a id="device-link" href="https://github.com/login/device" target="_blank">github.com/login/device</a></p>
-        <p>2. Enter this code:</p>
+        <p>1. We opened GitHub in a new tab (or click below)</p>
+        <p>2. Confirm the code matches, then click <strong>Authorize</strong></p>
         <div id="device-code" class="device-code">----</div>
+        <p class="hint">Code copied to clipboard</p>
+        <p>
+          <a id="device-link" href="https://github.com/login/device" target="_blank">Open GitHub device login</a>
+          ·
+          <button type="button" class="link-btn" id="device-open">Open again</button>
+        </p>
         <p id="device-wait">Waiting for authorization…</p>
       </div>
       <button type="button" class="secondary" id="device-cancel">Cancel</button>

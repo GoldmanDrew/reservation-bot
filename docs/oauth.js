@@ -130,6 +130,7 @@
       DEVICE_KEY,
       JSON.stringify({
         device_code: device.device_code,
+        user_code: device.user_code,
         interval: device.interval || 5,
         expires_in: device.expires_in || 900,
         client_id: clientId,
@@ -139,7 +140,9 @@
 
     return {
       user_code: device.user_code,
-      verification_uri: device.verification_uri || "https://github.com/login/device",
+      verification_uri:
+        device.verification_uri_complete ||
+        `${device.verification_uri || "https://github.com/login/device"}?user_code=${encodeURIComponent(device.user_code)}`,
       interval: device.interval || 5,
     };
   }
