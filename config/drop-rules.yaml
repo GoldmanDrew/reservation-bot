@@ -1,0 +1,45 @@
+# Known drop rules for NYC restaurants (days before target date, local release time)
+# Keys: OpenTable slug, venue_id, or normalized restaurant name
+
+san-sabino-new-york:
+  days_before: 30
+  hour: 9
+  minute: 0
+  timezone: America/New_York
+  source: restaurant_website
+  notes: "OpenTable only, 9am ET per sansabinonyc.com"
+
+76686487:
+  days_before: 30
+  hour: 9
+  minute: 0
+  timezone: America/New_York
+  source: restaurant_website
+
+carbone-new-york:
+  days_before: 30
+  hour: 9
+  minute: 0
+  timezone: America/New_York
+  source: default_heuristic
+
+8033:
+  days_before: 30
+  hour: 9
+  minute: 0
+  timezone: America/New_York
+  source: default_heuristic
+
+_defaults:
+  opentable:
+    days_before: 30
+    hour: 9
+    minute: 0
+    timezone: America/New_York
+    source: default_heuristic
+  resy:
+    days_before: 30
+    hour: 9
+    minute: 0
+    timezone: America/New_York
+    source: default_heuristic

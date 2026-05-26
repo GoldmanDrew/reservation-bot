@@ -11,63 +11,27 @@
     <div class="logo">🎯</div>
     <div>
       <h1>Reservation Bot</h1>
-      <p class="subtitle">Free GitHub Actions sniper for OpenTable & Resy</p>
+      <p class="subtitle">4 inputs → automated OpenTable sniper via GitHub Actions</p>
     </div>
   </header>
 
   <main>
     <section class="card steps">
-      <h2>How it works</h2>
+      <h2>One-time setup</h2>
       <ol>
-        <li>Add secrets to <a href="https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions" target="_blank">GitHub Secrets</a>:
-          <ul>
-            <li><strong>OpenTable:</strong> <code>OPENTABLE_COOKIES</code> (required for OT)</li>
-            <li><strong>Resy:</strong> <code>RESY_EMAIL</code> + <code>RESY_PASSWORD</code> (optional)</li>
-            <li><strong>Alerts:</strong> <code>TELEGRAM_BOT_TOKEN</code> + <code>TELEGRAM_CHAT_ID</code> (recommended) or <code>WEBHOOK_URL</code> (Discord)</li>
-          </ul>
-        </li>
-        <li>Generate a snipe below → paste into <code>config/snipes.yaml</code></li>
-        <li>Push to GitHub — Actions runs every 5 minutes</li>
-        <li>OpenTable: click the booking link in Actions summary when a slot is found</li>
+        <li>Add <code>OPENTABLE_COOKIES</code>, <code>TELEGRAM_BOT_TOKEN</code>, <code>TELEGRAM_CHAT_ID</code> to <a href="https://github.com/GoldmanDrew/reservation-bot/settings/secrets/actions" target="_blank">GitHub Secrets</a></li>
+        <li>Fill the form below → open Create Snipe workflow with values pre-filled</li>
+        <li>Click <strong>Run workflow</strong> — bot resolves restaurant ID, drop time, and schedules the snipe</li>
       </ol>
     </section>
 
     <section class="card">
-      <h2>OpenTable cookies (one-time setup)</h2>
-      <ol class="cookie-steps">
-        <li>Log into <a href="https://www.opentable.com" target="_blank">opentable.com</a> in Chrome</li>
-        <li>F12 → <strong>Network</strong> → refresh the page</li>
-        <li>Click any request to <code>opentable.com</code></li>
-        <li>Copy the full <strong>Cookie</strong> header value</li>
-        <li>Paste as <code>OPENTABLE_COOKIES</code> in GitHub Secrets</li>
-        <li>Optional: copy <code>x-csrf-token</code> → <code>OPENTABLE_CSRF_TOKEN</code></li>
-      </ol>
-      <p class="hint">Cookies expire every few days — re-paste when snipes fail with auth errors.</p>
-    </section>
-
-    <section class="card">
-      <h2>Create a snipe</h2>
+      <h2>Create a snipe (4 fields)</h2>
       <form id="snipe-form">
         <div class="grid">
           <label>
-            Platform
-            <select id="platform">
-              <option value="opentable" selected>OpenTable</option>
-              <option value="resy">Resy</option>
-            </select>
-          </label>
-          <label>
-            Snipe ID
-            <input id="id" placeholder="carbone-june-15" required />
-          </label>
-          <label>
             Restaurant name
-            <input id="name" placeholder="Carbone" required />
-          </label>
-          <label>
-            <span id="venue-label">Restaurant ID (rid)</span>
-            <input id="venue_id" placeholder="8033" required />
-            <span class="hint" id="venue-hint">From OpenTable URL: ?rid=8033 or run search locally</span>
+            <input id="name" placeholder="San Sabino" required />
           </label>
           <label>
             Target date
@@ -76,80 +40,48 @@
           <label>
             Party size
             <select id="party_size">
-              <option value="2" selected>2</option>
+              <option value="2">2</option>
               <option value="3">3</option>
-              <option value="4">4</option>
+              <option value="4" selected>4</option>
               <option value="5">5</option>
               <option value="6">6</option>
             </select>
           </label>
           <label>
-            Mode
-            <select id="mode">
-              <option value="drop">Drop snipe (timed release)</option>
-              <option value="poll">Keep watching (cancellations)</option>
-            </select>
-          </label>
-          <label id="drop-field">
-            Drop time (local)
-            <input id="drop_at" type="datetime-local" />
-            <span class="hint">When reservations release (e.g. 30 days out at 9:00 AM)</span>
+            Preferred times
+            <input id="times" value="19:00,19:30,20:00" placeholder="19:00,19:30,20:00" required />
+            <span class="hint">Comma-separated, priority order</span>
           </label>
         </div>
 
-        <label>
-          Preferred times (priority order)
-          <div id="times-list" class="times-list"></div>
-          <div class="times-add">
-            <input id="new_time" placeholder="19:00 or 7:00 PM" />
-            <button type="button" id="add-time">Add</button>
-          </div>
-        </label>
-
         <label class="checkbox">
           <input type="checkbox" id="dry_run" checked />
-          Dry run (test without booking / notification)
+          Dry run first (recommended)
         </label>
 
-        <label class="checkbox">
-          <input type="checkbox" id="enabled" checked />
-          Enabled
-        </label>
-
-        <button type="submit" class="primary">Generate YAML</button>
+        <button type="submit" class="primary">Open Create Snipe Workflow</button>
       </form>
     </section>
 
-    <section class="card" id="output-section" hidden>
-      <div class="output-header">
-        <h2>Your snipe config</h2>
-        <button type="button" id="copy-yaml">Copy YAML</button>
-      </div>
-      <p class="hint">Add this to <code>config/snipes.yaml</code> under the <code>snipes:</code> list, then push to GitHub.</p>
-      <pre id="yaml-output"></pre>
-      <a class="edit-link" href="https://github.com/GoldmanDrew/reservation-bot/edit/main/config/snipes.yaml" target="_blank">
-        Edit snipes.yaml on GitHub →
-      </a>
+    <section class="card">
+      <h2>What happens automatically</h2>
+      <ul class="auto-list">
+        <li>Detects OpenTable vs Resy</li>
+        <li>Resolves restaurant ID (<code>rid</code>)</li>
+        <li>Calculates drop time (e.g. 30 days @ 9am ET for San Sabino)</li>
+        <li>Writes <code>config/snipes.yaml</code> and commits</li>
+        <li>Telegram confirmation when snipe is armed</li>
+        <li>Every 5 min: polls at drop time, sends booking link when slot found</li>
+      </ul>
     </section>
 
     <section class="card">
-      <h2>Find restaurant ID</h2>
-      <p><strong>OpenTable</strong> — from the booking URL or search locally:</p>
-      <pre>set OPENTABLE_COOKIES=your-cookie-string
-npm run search:opentable -- "Carbone"</pre>
-      <p class="hint">Or open the restaurant on OpenTable and copy <code>rid=</code> from the URL.</p>
-      <p style="margin-top:1rem"><strong>Resy</strong>:</p>
-      <pre>npm run search -- "Carbone"</pre>
-    </section>
-
-    <section class="card limits">
-      <h2>OpenTable notes</h2>
-      <ul>
-        <li>Bot finds slots and sends a <strong>pre-filled booking URL</strong> — you confirm in browser (~5 sec)</li>
-        <li>Full auto-book is attempted but often blocked; the handoff link is the reliable path</li>
-        <li>Refresh <code>OPENTABLE_COOKIES</code> when you get auth errors</li>
-        <li>GitHub Actions runs every <strong>5 minutes</strong>; drop snipes poll at 200ms once triggered</li>
-      </ul>
+      <h2>Manual workflow link</h2>
+      <p>
+        <a id="workflow-link" href="https://github.com/GoldmanDrew/reservation-bot/actions/workflows/create-snipe.yml" target="_blank">
+          Actions → Create Snipe → Run workflow
+        </a>
+      </p>
     </section>
   </main>
 
@@ -157,8 +89,6 @@ npm run search:opentable -- "Carbone"</pre>
     <a href="https://github.com/GoldmanDrew/reservation-bot">GitHub</a>
     ·
     <a href="https://github.com/GoldmanDrew/reservation-bot/actions">Actions</a>
-    ·
-    Personal use only
   </footer>
 
   <script src="app.js"></script>

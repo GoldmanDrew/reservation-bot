@@ -8,8 +8,10 @@
     "start": "next start -H 0.0.0.0",
     "lint": "next lint",
     "snipe": "node scripts/run-snipes.mjs",
+    "create-snipe": "node scripts/create-snipe.mjs",
     "search": "node scripts/search.mjs",
-    "search:opentable": "node scripts/search-opentable.mjs"
+    "search:opentable": "node scripts/search-opentable.mjs",
+    "test:drop-time": "node scripts/research-drop-time.mjs --test"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",

@@ -2,7 +2,6 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import yaml from "js-yaml";
 import {
   bookOpenTableSlot,
   checkOpenTableAvailability,
@@ -15,6 +14,7 @@ import {
   getResyConfigFromEnv,
 } from "./lib/resy.mjs";
 import { sendNotification } from "./lib/notify.mjs";
+import { disableSnipe, loadEnabledSnipes } from "./lib/snipes-config.mjs";
 import {
   normalizePreferredTimes,
   parseTimeToMinutes,
@@ -32,10 +32,9 @@ function log(msg) {
 
 function loadSnipes() {
   if (!fs.existsSync(CONFIG_PATH)) {
-    throw new Error(`Missing ${CONFIG_PATH} — copy config/snipes.example.yaml`);
+    throw new Error(`Missing ${CONFIG_PATH} — run Create Snipe workflow first`);
   }
-  const doc = yaml.load(fs.readFileSync(CONFIG_PATH, "utf-8"));
-  return (doc?.snipes ?? []).filter((s) => s.enabled !== false);
+  return loadEnabledSnipes();
 }
 
 function findMatchingSlot(slots, preferredTimes) {
@@ -100,6 +99,7 @@ async function notifySuccess(snipe, result) {
 }
 
 async function runDropSnipe(platform, config, snipe) {
+  const dryRun = Boolean(snipe.dry_run);
   const dropAt = new Date(snipe.drop_at).getTime();
   const wakeAt = dropAt - 30_000;
   const now = Date.now();
@@ -129,6 +129,7 @@ async function runDropSnipe(platform, config, snipe) {
         log(`${snipe.id}: SUCCESS — ${result.message}`);
         if (result.handoffUrl) log(`${snipe.id}: ${result.handoffUrl}`);
         await notifySuccess(snipe, result);
+        if (!dryRun) disableSnipe(snipe.id);
         return { success: true, snipe, result };
       }
 
@@ -143,6 +144,7 @@ async function runDropSnipe(platform, config, snipe) {
 }
 
 async function runPollSnipe(platform, config, snipe) {
+  const dryRun = Boolean(snipe.dry_run);
   log(`${snipe.id}: poll [${platform}] — ${snipe.restaurant_name}`);
 
   const slots = await fetchSlots(platform, config, snipe);
@@ -160,6 +162,7 @@ async function runPollSnipe(platform, config, snipe) {
     log(`${snipe.id}: SUCCESS — ${result.message}`);
     if (result.handoffUrl) log(`${snipe.id}: ${result.handoffUrl}`);
     await notifySuccess(snipe, result);
+    if (!dryRun) disableSnipe(snipe.id);
     return { success: true, snipe, result };
   }
 

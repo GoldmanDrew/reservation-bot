@@ -1,0 +1,69 @@
+name: Create Snipe
+
+on:
+  workflow_dispatch:
+    inputs:
+      restaurant_name:
+        description: "Restaurant name (e.g. San Sabino)"
+        required: true
+        type: string
+      target_date:
+        description: "Target date YYYY-MM-DD"
+        required: true
+        type: string
+      party_size:
+        description: "Party size"
+        required: true
+        default: "2"
+        type: string
+      preferred_times:
+        description: "Preferred times, comma-separated (e.g. 19:00,19:30,20:00)"
+        required: true
+        default: "19:00,19:30,20:00"
+        type: string
+      dry_run:
+        description: "Dry run (true = test only, no real booking alert)"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: write
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create snipe (resolve + drop time + save)
+        env:
+          RESTAURANT_NAME: ${{ github.event.inputs.restaurant_name }}
+          TARGET_DATE: ${{ github.event.inputs.target_date }}
+          PARTY_SIZE: ${{ github.event.inputs.party_size }}
+          PREFERRED_TIMES: ${{ github.event.inputs.preferred_times }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          OPENTABLE_COOKIES: ${{ secrets.OPENTABLE_COOKIES }}
+          OPENTABLE_CSRF_TOKEN: ${{ secrets.OPENTABLE_CSRF_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node scripts/create-snipe.mjs
+
+      - name: Commit snipe config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add config/snipes.yaml
+          git diff --staged --quiet || git commit -m "Add snipe: ${{ github.event.inputs.restaurant_name }} on ${{ github.event.inputs.target_date }}"
+          git push

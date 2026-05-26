@@ -74,13 +74,57 @@ export async function searchOpenTableRestaurants(config, query, lat = 40.7128, l
   const suggestions = data.data?.autocomplete?.restaurantSuggestions ?? [];
   return suggestions
     .filter((s) => s.restaurantId && s.name)
-    .map((s) => ({
-      platform: "opentable",
-      venueId: String(s.restaurantId),
-      name: s.name,
-      location: s.metroName,
-      url: s.profileUrl ? `${OT_ORIGIN}${s.profileUrl}` : `${OT_ORIGIN}/r/${s.restaurantId}`,
-    }));
+    .map((s) => {
+      const slug = s.profileUrl?.replace(/^\/r\//, "").split("?")[0];
+      return {
+        platform: "opentable",
+        venueId: String(s.restaurantId),
+        name: s.name,
+        slug,
+        location: s.metroName,
+        url: s.profileUrl ? `${OT_ORIGIN}${s.profileUrl}` : `${OT_ORIGIN}/r/${slug ?? s.restaurantId}`,
+      };
+    });
+}
+
+export async function resolveOpenTableBySlug(slug, config = null) {
+  config = config ?? getOpenTableConfigFromEnv();
+
+  const res = await fetch(
+    `${OT_ORIGIN}/dapi/fe/gql?optype=query&opname=RestaurantProfile`,
+    {
+      method: "POST",
+      headers: { ...otHeaders(config), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        operationName: "RestaurantProfile",
+        variables: { urlSlug: slug },
+        query: `query RestaurantProfile($urlSlug: String!) {
+          restaurant(urlSlug: $urlSlug) {
+            restaurantId
+            name
+            urls { profileLink }
+            metro { name }
+          }
+        }`,
+      }),
+    }
+  );
+
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const r = data.data?.restaurant;
+  if (!r?.restaurantId || !r.name) return null;
+
+  return {
+    platform: "opentable",
+    venueId: String(r.restaurantId),
+    venue_id: String(r.restaurantId),
+    name: r.name,
+    slug,
+    location: r.metro?.name,
+    url: r.urls?.profileLink ? `${OT_ORIGIN}${r.urls.profileLink}` : `${OT_ORIGIN}/r/${slug}`,
+  };
 }
 
 export async function checkOpenTableAvailability(config, venueId, date, partySize) {

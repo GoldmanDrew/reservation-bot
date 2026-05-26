@@ -2,7 +2,6 @@ name: Reservation Sniper
 
 on:
   schedule:
-    # Every 5 minutes (GitHub Actions minimum interval)
     - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
@@ -12,7 +11,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   snipe:
@@ -29,6 +28,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check OpenTable session
+        env:
+          OPENTABLE_COOKIES: ${{ secrets.OPENTABLE_COOKIES }}
+          OPENTABLE_CSRF_TOKEN: ${{ secrets.OPENTABLE_CSRF_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node scripts/check-opentable-session.mjs
+        continue-on-error: true
+
       - name: Run sniper
         env:
           RESY_EMAIL: ${{ secrets.RESY_EMAIL }}
@@ -42,3 +50,11 @@ jobs:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           SNIPE_ID: ${{ github.event.inputs.snipe_id }}
         run: node scripts/run-snipes.mjs
+
+      - name: Commit disabled snipes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add config/snipes.yaml
+          git diff --staged --quiet || git commit -m "Disable completed snipe(s)"
+          git push

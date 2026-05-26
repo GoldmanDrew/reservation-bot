@@ -72,6 +72,14 @@ main {
 
 .cookie-steps li { margin-bottom: 0.375rem; }
 
+.auto-list {
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.auto-list li { margin-bottom: 0.375rem; }
+
 .steps ol {
   padding-left: 1.25rem;
   color: var(--muted);
