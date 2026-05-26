@@ -8,6 +8,13 @@ don-angie-new-york:
   timezone: America/New_York
   source: opentable_blog
 
+1014226:
+  days_before: 7
+  hour: 9
+  minute: 0
+  timezone: America/New_York
+  source: opentable_blog
+
 13161123:
   days_before: 7
   hour: 9

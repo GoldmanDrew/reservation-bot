@@ -5,6 +5,22 @@ import {
 } from "./time.mjs";
 
 const OT_ORIGIN = "https://www.opentable.com";
+const FETCH_TIMEOUT_MS = 20_000;
+
+async function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error(`OpenTable request timed out after ${FETCH_TIMEOUT_MS / 1000}s`);
+    }
+    throw new Error(err.message || "OpenTable request failed");
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function otHeaders(config) {
   return {
@@ -32,14 +48,14 @@ export function getOpenTableConfigFromEnv() {
 }
 
 export async function verifyOpenTableAuth(config) {
-  const res = await fetch(`${OT_ORIGIN}/dapi/user/profile`, {
+  const res = await fetchWithTimeout(`${OT_ORIGIN}/dapi/user/profile`, {
     headers: otHeaders(config),
   });
   return res.ok;
 }
 
 export async function searchOpenTableRestaurants(config, query, lat = 40.7128, lon = -74.006) {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${OT_ORIGIN}/dapi/fe/gql?optype=query&opname=Autocomplete`,
     {
       method: "POST",
@@ -90,7 +106,7 @@ export async function searchOpenTableRestaurants(config, query, lat = 40.7128, l
 export async function resolveOpenTableBySlug(slug, config = null) {
   config = config ?? getOpenTableConfigFromEnv();
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${OT_ORIGIN}/dapi/fe/gql?optype=query&opname=RestaurantProfile`,
     {
       method: "POST",
@@ -130,7 +146,7 @@ export async function resolveOpenTableBySlug(slug, config = null) {
 export async function checkOpenTableAvailability(config, venueId, date, partySize) {
   const dateTime = `${date}T19:00:00`;
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${OT_ORIGIN}/dapi/fe/gql?optype=query&opname=RestaurantsAvailability`,
     {
       method: "POST",
@@ -206,7 +222,7 @@ export async function bookOpenTableSlot(config, venueId, date, slot, partySize, 
 
   if (slot.configToken) {
     try {
-      const res = await fetch(`${OT_ORIGIN}/dapi/booking/make-reservation`, {
+      const res = await fetchWithTimeout(`${OT_ORIGIN}/dapi/booking/make-reservation`, {
         method: "POST",
         headers: { ...otHeaders(config), "Content-Type": "application/json" },
         body: JSON.stringify({

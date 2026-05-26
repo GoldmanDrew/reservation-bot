@@ -66,7 +66,7 @@ export async function searchResyRestaurants(query, lat = 40.7128, lon = -74.006)
       const id = h.id;
       const venueId =
         typeof id === "object"
-          ? String(id.resy_id ?? id.id ?? id.venue_id ?? "")
+          ? String(id.resy ?? id.resy_id ?? id.id ?? id.venue_id ?? "")
           : String(id);
       return {
         platform: "resy",

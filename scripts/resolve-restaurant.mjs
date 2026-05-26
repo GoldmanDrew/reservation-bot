@@ -91,22 +91,6 @@ async function tryOpenTableSlugGuesses(name, config) {
 }
 
 async function resolveFromAlias(alias, name, config) {
-  if (alias.slug && config) {
-    const resolved = await resolveOpenTableBySlug(alias.slug, config);
-    if (resolved) {
-      return {
-        platform: alias.platform ?? "opentable",
-        venue_id: String(resolved.venueId),
-        venueId: String(resolved.venueId),
-        name: alias.name ?? resolved.name,
-        slug: alias.slug ?? resolved.slug,
-        url: resolved.url,
-        location: resolved.location,
-        confidence: "high",
-      };
-    }
-  }
-
   if (alias.venue_id) {
     return {
       platform: alias.platform ?? "opentable",
@@ -114,7 +98,40 @@ async function resolveFromAlias(alias, name, config) {
       venueId: String(alias.venue_id),
       name: alias.name ?? name,
       slug: alias.slug,
+      url: alias.slug ? `https://www.opentable.com/r/${alias.slug}` : undefined,
       confidence: "high",
+    };
+  }
+
+  if (alias.slug && config) {
+    try {
+      const resolved = await resolveOpenTableBySlug(alias.slug, config);
+      if (resolved) {
+        return {
+          platform: alias.platform ?? "opentable",
+          venue_id: String(resolved.venueId),
+          venueId: String(resolved.venueId),
+          name: alias.name ?? resolved.name,
+          slug: alias.slug ?? resolved.slug,
+          url: resolved.url,
+          location: resolved.location,
+          confidence: "high",
+        };
+      }
+    } catch (err) {
+      console.warn(`OpenTable slug lookup failed for ${alias.slug}:`, err.message);
+    }
+  }
+
+  if (alias.slug) {
+    return {
+      platform: alias.platform ?? "opentable",
+      venue_id: "",
+      venueId: "",
+      name: alias.name ?? name,
+      slug: alias.slug,
+      url: `https://www.opentable.com/r/${alias.slug}`,
+      confidence: "medium",
     };
   }
 
@@ -185,18 +202,20 @@ export async function resolveRestaurant(input, options = {}) {
   }
 
   if (alias) {
-    if (otConfig) {
-      const fromAlias = await resolveFromAlias(alias, name, otConfig);
-      if (fromAlias) return fromAlias;
-    } else if (alias.venue_id) {
+    if (alias.venue_id) {
       return {
         platform: alias.platform ?? "opentable",
         venue_id: String(alias.venue_id),
         venueId: String(alias.venue_id),
         name: alias.name ?? name,
         slug: alias.slug,
+        url: alias.slug ? `https://www.opentable.com/r/${alias.slug}` : undefined,
         confidence: "high",
       };
+    }
+    if (otConfig) {
+      const fromAlias = await resolveFromAlias(alias, name, otConfig);
+      if (fromAlias) return fromAlias;
     }
   }
 
@@ -213,6 +232,8 @@ export async function resolveRestaurant(input, options = {}) {
     }
   }
 
+  const preferOpenTable = Boolean(process.env.OPENTABLE_COOKIES?.trim());
+
   try {
     resyResults = await searchResyRestaurants(name, lat, lon);
   } catch {
@@ -225,21 +246,22 @@ export async function resolveRestaurant(input, options = {}) {
       platform: "opentable",
       score: scoreMatch(name, r.name) + 0.05,
     })),
-    ...(otResults.length === 0
-      ? resyResults.map((r) => ({
+    ...(preferOpenTable
+      ? []
+      : resyResults.map((r) => ({
           ...r,
           platform: "resy",
           score: scoreMatch(name, r.name),
-        }))
-      : []),
+        }))),
   ]
     .filter((r) => r.score >= 0.5)
     .sort((a, b) => b.score - a.score);
 
   if (combined.length === 0) {
-    throw new Error(
-      `No restaurants found for "${name}" on OpenTable. Try the exact name, an OpenTable URL, or add an alias in config/restaurant-aliases.yaml`
-    );
+    const hint = preferOpenTable
+      ? "OpenTable search returned nothing — refresh OPENTABLE_COOKIES or add an entry in config/restaurant-aliases.yaml"
+      : "Try the exact name, an OpenTable URL, or add an alias in config/restaurant-aliases.yaml";
+    throw new Error(`No restaurants found for "${name}". ${hint}`);
   }
 
   const best = combined[0];

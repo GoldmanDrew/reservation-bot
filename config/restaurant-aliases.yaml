@@ -5,6 +5,7 @@ aliases:
   don angie:
     platform: opentable
     slug: don-angie-new-york
+    venue_id: "1014226"
     name: Don Angie
   san sabino:
     platform: opentable
