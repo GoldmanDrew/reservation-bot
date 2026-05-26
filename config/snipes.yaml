@@ -2,14 +2,28 @@ snipes:
   - id: san-sabino-2026-06-26
     enabled: true
     platform: opentable
-    venue_id: "76686487"
+    venue_id: '76686487'
     restaurant_name: San Sabino
-    target_date: "2026-06-26"
+    target_date: '2026-06-26'
     party_size: 4
     preferred_times:
-      - "19:00"
-      - "19:30"
-      - "20:00"
+      - '19:00'
+      - '19:30'
+      - '20:00'
     mode: drop
-    drop_at: "2026-05-27T13:00:00.000Z"
+    drop_at: '2026-05-27T13:00:00.000Z'
+    dry_run: true
+  - id: don-angie-2026-06-05
+    enabled: true
+    platform: opentable
+    venue_id: '1014226'
+    restaurant_name: Don Angie
+    target_date: '2026-06-05'
+    party_size: 4
+    preferred_times:
+      - '19:00'
+      - '19:15'
+      - '19:30'
+    mode: drop
+    drop_at: '2026-05-29T13:00:00.000Z'
     dry_run: true
