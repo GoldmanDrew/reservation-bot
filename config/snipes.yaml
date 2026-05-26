@@ -1,1 +1,14 @@
-snipes: []
+snipes: [  
+    - id: sansabino
+    enabled: true
+    platform: opentable
+    venue_id: "76686487"
+    restaurant_name: San Sabino
+    target_date: "2026-06-26"
+    party_size: 4
+    preferred_times:
+      - "19:00"
+    mode: drop
+    drop_at: "2026-05-26T13:00:00.000Z"
+    dry_run: true
+]
