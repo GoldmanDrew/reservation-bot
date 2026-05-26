@@ -5,8 +5,8 @@ import { fileURLToPath } from "url";
 import {
   bookOpenTableSlot,
   checkOpenTableAvailability,
+  checkOpenTableSession,
   getOpenTableConfigFromEnv,
-  verifyOpenTableAuth,
 } from "./lib/opentable.mjs";
 import {
   bookResySlot,
@@ -214,11 +214,14 @@ async function main() {
 
   if (otSnipes.length > 0) {
     otConfig = getOpenTableConfigFromEnv();
-    const valid = await verifyOpenTableAuth(otConfig);
-    if (!valid) {
-      throw new Error("OpenTable cookies invalid or expired — update OPENTABLE_COOKIES secret");
+    const session = await checkOpenTableSession(otConfig);
+    if (session.reason === "ok") {
+      log("OpenTable session OK");
+    } else if (session.reason === "unreachable") {
+      log(`OpenTable slow/unreachable (${session.message ?? "timeout"}) — continuing snipes anyway`);
+    } else {
+      log("OpenTable cookies may be expired — snipes will likely fail until OPENTABLE_COOKIES is refreshed");
     }
-    log("OpenTable session OK");
   }
 
   for (const snipe of snipes) {

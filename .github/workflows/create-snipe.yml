@@ -41,6 +41,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
       - uses: actions/setup-node@v4
         with:
@@ -91,9 +94,15 @@ jobs:
         env:
           RESTAURANT_NAME: ${{ steps.vars.outputs.restaurant_name }}
           TARGET_DATE: ${{ steps.vars.outputs.target_date }}
+        continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
           git add config/snipes.yaml
-          git diff --staged --quiet || git commit -m "Add snipe: ${RESTAURANT_NAME} on ${TARGET_DATE}"
-          git push
+          if git diff --staged --quiet; then
+            echo "No snipe config changes"
+          else
+            git commit -m "Add snipe: ${RESTAURANT_NAME} on ${TARGET_DATE}"
+            git push origin HEAD:main
+          fi

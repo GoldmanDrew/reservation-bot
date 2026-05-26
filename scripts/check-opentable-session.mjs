@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { getOpenTableConfigFromEnv, verifyOpenTableAuth } from "./lib/opentable.mjs";
+import { checkOpenTableSession, getOpenTableConfigFromEnv } from "./lib/opentable.mjs";
 import { loadEnabledSnipes } from "./lib/snipes-config.mjs";
 import { sendNotification } from "./lib/notify.mjs";
 
@@ -21,8 +21,13 @@ async function main() {
     throw err;
   }
 
-  const valid = await verifyOpenTableAuth(config);
-  if (!valid) {
+  const session = await checkOpenTableSession(config);
+  if (session.reason === "ok") {
+    console.log("OpenTable session OK");
+    return;
+  }
+
+  if (session.reason === "invalid") {
     await sendNotification(
       "OpenTable cookies expired",
       "Refresh OPENTABLE_COOKIES in GitHub Secrets. Copy Cookie header from logged-in opentable.com."
@@ -30,7 +35,7 @@ async function main() {
     throw new Error("OpenTable session invalid — update OPENTABLE_COOKIES");
   }
 
-  console.log("OpenTable session OK");
+  console.warn(`OpenTable unreachable (${session.message ?? "network"}) — skipping cookie alert`);
 }
 
 main().catch((err) => {

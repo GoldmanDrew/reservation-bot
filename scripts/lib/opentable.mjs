@@ -5,21 +5,51 @@ import {
 } from "./time.mjs";
 
 const OT_ORIGIN = "https://www.opentable.com";
-const FETCH_TIMEOUT_MS = 20_000;
+const DEFAULT_FETCH_TIMEOUT_MS = 45_000;
 
-async function fetchWithTimeout(url, options = {}) {
+async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (err) {
     if (err.name === "AbortError") {
-      throw new Error(`OpenTable request timed out after ${FETCH_TIMEOUT_MS / 1000}s`);
+      throw new Error(`OpenTable request timed out after ${timeoutMs / 1000}s`);
     }
     throw new Error(err.message || "OpenTable request failed");
   } finally {
     clearTimeout(timer);
   }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Returns { ok, reason: 'ok' | 'invalid' | 'unreachable' } */
+export async function checkOpenTableSession(config) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetchWithTimeout(
+        `${OT_ORIGIN}/dapi/user/profile`,
+        { headers: otHeaders(config) },
+        25_000
+      );
+      if (res.ok) return { ok: true, reason: "ok" };
+      return { ok: false, reason: "invalid" };
+    } catch (err) {
+      if (attempt === 2) {
+        return { ok: false, reason: "unreachable", message: err.message };
+      }
+      await sleep(2000);
+    }
+  }
+  return { ok: false, reason: "unreachable", message: "OpenTable unreachable" };
+}
+
+export async function verifyOpenTableAuth(config) {
+  const result = await checkOpenTableSession(config);
+  return result.ok;
 }
 
 function otHeaders(config) {
@@ -45,13 +75,6 @@ export function getOpenTableConfigFromEnv() {
     cookies: cookies.trim(),
     csrfToken: process.env.OPENTABLE_CSRF_TOKEN,
   };
-}
-
-export async function verifyOpenTableAuth(config) {
-  const res = await fetchWithTimeout(`${OT_ORIGIN}/dapi/user/profile`, {
-    headers: otHeaders(config),
-  });
-  return res.ok;
 }
 
 export async function searchOpenTableRestaurants(config, query, lat = 40.7128, lon = -74.006) {
