@@ -27,7 +27,9 @@
 |---|---|---|
 | `OPENTABLE_COOKIES` | **Yes** | Full Cookie header from step 1 |
 | `OPENTABLE_CSRF_TOKEN` | No | x-csrf-token if present |
-| `WEBHOOK_URL` | No | Discord/Telegram webhook — includes booking link |
+| `TELEGRAM_BOT_TOKEN` | No | Telegram bot token from @BotFather |
+| `TELEGRAM_CHAT_ID` | No | Your chat ID — bot DMs you when a slot is found |
+| `WEBHOOK_URL` | No | Discord webhook (alternative to Telegram) |
 | `RESY_EMAIL` / `RESY_PASSWORD` | No | Only if using Resy snipes |
 
 ### 3. Create a snipe
@@ -37,7 +39,21 @@
 3. Generate YAML → paste into [`config/snipes.yaml`](https://github.com/GoldmanDrew/reservation-bot/edit/main/config/snipes.yaml)
 4. Push to `main`
 
-### 4. When a slot is found
+### Telegram alerts (recommended)
+
+Telegram does **not** use `WEBHOOK_URL`. Add these two secrets instead:
+
+1. Message [@BotFather](https://t.me/BotFather) on Telegram → `/newbot` → copy the **bot token**
+2. Message your new bot once (say "hi")
+3. Open `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates` in a browser
+4. Find `"chat":{"id":123456789}` — that number is your **chat ID**
+5. Add GitHub Secrets:
+   - `TELEGRAM_BOT_TOKEN` = token from BotFather
+   - `TELEGRAM_CHAT_ID` = your chat id
+
+When a slot is found, you'll get a Telegram message with the OpenTable booking link.
+
+---
 
 - Check the [Actions run summary](https://github.com/GoldmanDrew/reservation-bot/actions) for **Complete booking →** link
 - Or get the link via Discord/Telegram if `WEBHOOK_URL` is set

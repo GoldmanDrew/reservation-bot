@@ -37,6 +37,8 @@ jobs:
           RESY_AUTH_TOKEN: ${{ secrets.RESY_AUTH_TOKEN }}
           OPENTABLE_COOKIES: ${{ secrets.OPENTABLE_COOKIES }}
           OPENTABLE_CSRF_TOKEN: ${{ secrets.OPENTABLE_CSRF_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           SNIPE_ID: ${{ github.event.inputs.snipe_id }}
         run: node scripts/run-snipes.mjs
