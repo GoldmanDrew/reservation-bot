@@ -5,6 +5,9 @@ on:
   repository_dispatch:
     types: [test-telegram]
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
