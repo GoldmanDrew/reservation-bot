@@ -45,11 +45,20 @@ function findMatchingSlot(slots, preferredTimes) {
   return slots.find((s) => parseTimeToMinutes(s.time) === best) ?? null;
 }
 
+// Paired with daily drop crons in reservation-sniper.yml (8:54 AM America/New_York).
+// After checkout + npm ci (~2 min), a run started by that cron enters with ~4 min until drop.
+// Keep this window tight so stray */5 runs cannot arm early; runDropSnipe sleeps until 30s before drop.
+const DROP_ARM_MINUTES_BEFORE = 7;
+const DROP_GRACE_MINUTES_AFTER = 3;
+
 function shouldRunDropSnipe(snipe, now) {
   if (!snipe.drop_at) return false;
   const dropAt = new Date(snipe.drop_at).getTime();
   const msUntilDrop = dropAt - now.getTime();
-  return msUntilDrop <= 6 * 60 * 1000 && msUntilDrop >= -3 * 60 * 1000;
+  return (
+    msUntilDrop <= DROP_ARM_MINUTES_BEFORE * 60 * 1000 &&
+    msUntilDrop >= -DROP_GRACE_MINUTES_AFTER * 60 * 1000
+  );
 }
 
 function shouldRunPollSnipe(snipe) {

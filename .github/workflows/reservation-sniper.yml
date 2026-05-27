@@ -2,7 +2,14 @@ name: Reservation Sniper
 
 on:
   schedule:
+    # Health check + Telegram inbox between drops (GitHub may delay these; do not rely on them for drop timing)
     - cron: "*/5 * * * *"
+    # Drop snipe: 8:54 AM America/New_York (6 min before the 9:00 AM release). One pair handles DST:
+    #   EDT (Mar–Nov): 8:54 AM = 12:54 UTC
+    #   EST (Nov–Mar): 8:54 AM = 13:54 UTC
+    # Snipes outside today's drop window exit immediately via shouldRunDropSnipe().
+    - cron: "54 12 * * *"
+    - cron: "54 13 * * *"
   workflow_dispatch:
     inputs:
       snipe_id:
@@ -16,7 +23,7 @@ permissions:
 jobs:
   snipe:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
